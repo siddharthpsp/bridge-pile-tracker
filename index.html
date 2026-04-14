@@ -8,15 +8,19 @@
 
 <!--
 =============================================================
- ENHANCED BRIDGE PILE TRACKER
+ SETUP (one time, ~3 minutes) — read before using
 =============================================================
- Features:
- ✓ Real-time pile tracking
- ✓ Date-based completion tracking
- ✓ Professional report generation
- ✓ PDF export capability
- ✓ Team collaboration
- ✓ Cloud synchronization
+ 1. Go to https://jsonbin.io  →  Sign up (free, email only)
+ 2. Click "API Keys" in sidebar → copy your "X-MASTER-KEY"
+ 3. Click "Create a Bin" → paste this in the editor:   {}
+    → Set the name to "bridge-piles" → click Create
+ 4. Copy the BIN ID from the URL (long string after /b/)
+ 5. Below, replace:
+       BIN_ID_HERE      with your Bin ID
+       MASTER_KEY_HERE  with your X-Master-Key
+ 6. Save this file. Go to https://app.netlify.com/drop
+    Drag-drop this file → you get a public URL like
+    https://random-name.netlify.app → share in WhatsApp.
 =============================================================
 -->
 
@@ -177,8 +181,8 @@
 </div>
 
 <div class="name-row">
-  <input id="engName" type="text" placeholder="Your name (e.g. Ramesh)" />
-  <input id="workDate" type="date" />
+  <input id="engName" type="text" placeholder="Name (required)" />
+  <input id="workDate" type="date" required />
 </div>
 
 <div class="dir">
@@ -215,7 +219,7 @@
 <div id="reportOverlay"></div>
 
 <script>
-  // ========= CONFIG — CONFIGURED WITH YOUR CREDENTIALS =========
+  // ========= CONFIG — REPLACE THESE TWO VALUES =========
   const BIN_ID     = "69dd98e7aaba882197f75426";
   const MASTER_KEY = "$2a$10$w0bQZqKoLNQfO0OtCV2VU.YS.GvFy/IVXBE5SyjpD5RtV3xn/NCdS";
   // =====================================================
@@ -240,20 +244,7 @@
 
   const $ = id => document.getElementById(id);
 
-  // restore name
-  try {
-    const n = localStorage.getItem('eng-name');
-    if (n) $('engName').value = n;
-  } catch(e){}
-  $('engName').addEventListener('input', ()=>{
-    try { localStorage.setItem('eng-name', $('engName').value.trim()); } catch(e){}
-  });
-  // default work date = today
-  (function(){
-    const d = new Date();
-    const iso = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-    $('workDate').value = iso;
-  })();
+  // Name and date are intentionally NOT restored — user must enter both every time
 
   function setSync(cls, text) {
     const el = $('sync');
@@ -299,12 +290,16 @@
   async function toggle(key) {
     const name = ($('engName').value || '').trim();
     if (!name) {
-      alert('Please enter your name first (top of page)');
+      alert('Please enter your name');
       $('engName').focus();
       return;
     }
     const dateStr = $('workDate').value;
-    if (!dateStr) { alert('Please select a date'); return; }
+    if (!dateStr) {
+      alert('Please select the completion date');
+      $('workDate').focus();
+      return;
+    }
     // Use noon local time to avoid timezone edge issues
     const workTs = new Date(dateStr + 'T12:00:00').getTime();
     // pull latest first to minimise conflicts
@@ -319,6 +314,9 @@
     state.updatedBy = name;
     render();
     await push();
+    // clear name and date so next entry requires fresh input
+    $('engName').value = '';
+    $('workDate').value = '';
   }
 
   function fmtTime(ts) {
